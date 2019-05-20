@@ -1,5 +1,5 @@
 {
-  "name": "ipunktbs/laravel-rabbitmq-enqueue",
+  "name": "ipunkt/laravel-rabbitmq-enqueue",
   "description": "RabbitMQ with topic exchanges and routing keys via enqueue",
   "type": "library",
   "license": "MIT",
