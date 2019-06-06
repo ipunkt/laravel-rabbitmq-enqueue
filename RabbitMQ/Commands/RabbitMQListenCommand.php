@@ -147,14 +147,25 @@ class RabbitMQListenCommand extends Command
             $this->info('Received message '.$message->getRoutingKey() );
             $this->info('Message Content '.$message->getBody(), Output::VERBOSITY_VERBOSE);
 
-            event(new MessageReceived($message));
+            try {
+                event(new MessageReceived($message));
+            } catch(\Throwable $t) {
+                echo "FATAL: Exception during MessageReceived Handler".PHP_EOL;
+                var_dump($t);
+                throw $t;
+            }
             $response = $this->messageHandler
                 ->setMessage($message)
                 ->setConsumer($consumer)
                 ->setContext($this->context)
                 ->setQueue($this->queue)
                 ->handle();
-            event(new MessageProcessed($message, $response));
+            try {
+                event(new MessageProcessed($message, $response));
+            } catch(\Throwable $t) {
+                echo "FATAL: Exception during MessageProcessed Handler".PHP_EOL;
+                throw $t;
+            }
 
             return $response;
         });
