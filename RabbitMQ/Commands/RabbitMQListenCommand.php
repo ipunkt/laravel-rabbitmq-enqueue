@@ -147,27 +147,16 @@ class RabbitMQListenCommand extends Command
             $this->info('Received message '.$message->getRoutingKey() );
             $this->info('Message Content '.$message->getBody(), Output::VERBOSITY_VERBOSE);
 
-            try {
-                event(new MessageReceived($message));
-            } catch(\Throwable $t) {
-                echo "FATAL: Exception during MessageReceived Handler".PHP_EOL;
-                var_dump($t);
-                throw $t;
-            }
-            $response = $this->messageHandler
+            $this->messageReceivedEvent($message);
+            $handled = $this->messageHandler
                 ->setMessage($message)
                 ->setConsumer($consumer)
                 ->setContext($this->context)
                 ->setQueue($this->queue)
                 ->handle();
-            try {
-                event(new MessageProcessed($message, $response));
-            } catch(\Throwable $t) {
-                echo "FATAL: Exception during MessageProcessed Handler".PHP_EOL;
-                throw $t;
-            }
+            $this->messageProcessedEvent($message, $handled);
 
-            return $response;
+            return $handled;
         });
     }
 
@@ -198,5 +187,27 @@ class RabbitMQListenCommand extends Command
     {
         $exchangeNameNotEmpty = !empty($this->exchangeName);
         return $exchangeNameNotEmpty;
+    }
+
+    private function messageReceivedEvent(AmqpMessage $message)
+    {
+        try {
+            event(new MessageReceived($message));
+        } catch(\Throwable $t) {
+            echo "FATAL: Exception during MessageReceived Handler".PHP_EOL;
+            var_dump($t);
+            throw $t;
+        }
+    }
+
+    private function messageProcessedEvent(AmqpMessage $message, bool $handled)
+    {
+
+        try {
+            event(new MessageProcessed($message, $handled));
+        } catch(\Throwable $t) {
+            echo "FATAL: Exception during MessageProcessed Handler".PHP_EOL;
+            throw $t;
+        }
     }
 }
