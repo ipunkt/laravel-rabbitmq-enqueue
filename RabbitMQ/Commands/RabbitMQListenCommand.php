@@ -9,6 +9,7 @@ use Interop\Amqp\AmqpQueue;
 use Interop\Amqp\AmqpTopic;
 use Interop\Amqp\Impl\AmqpBind;
 use Interop\Queue\Consumer;
+use Ipunkt\RabbitMQ\Events\MessageCausedException;
 use Ipunkt\RabbitMQ\Events\MessageProcessed;
 use Ipunkt\RabbitMQ\Events\MessageReceived;
 use Ipunkt\RabbitMQ\MessageHandler\MessageHandler;
@@ -148,12 +149,17 @@ class RabbitMQListenCommand extends Command
             $this->info('Message Content '.$message->getBody(), Output::VERBOSITY_VERBOSE);
 
             $this->messageReceivedEvent($message);
-            $handled = $this->messageHandler
-                ->setMessage($message)
-                ->setConsumer($consumer)
-                ->setContext($this->context)
-                ->setQueue($this->queue)
-                ->handle();
+            try {
+                $handled = $this->messageHandler
+                    ->setMessage($message)
+                    ->setConsumer($consumer)
+                    ->setContext($this->context)
+                    ->setQueue($this->queue)
+                    ->handle();
+            } catch(\Throwable $t) {
+                $this->messageCausedExceptionEvent($message, $t);
+                throw $t;
+            }
             $this->messageProcessedEvent($message, $handled);
 
             return $handled;
@@ -208,6 +214,16 @@ class RabbitMQListenCommand extends Command
         } catch(\Throwable $t) {
             echo "FATAL: Exception during MessageProcessed Handler".PHP_EOL;
             throw $t;
+        }
+    }
+
+    private function messageCausedExceptionEvent(AmqpMessage $message, \Throwable $messageThrowable)
+    {
+        try {
+            event(new MessageCausedException($message, $messageThrowable));
+        } catch(\Throwable $t) {
+            echo "FATAL: Exception during MessageCausedException Handler".PHP_EOL;
+            var_dump($t);
         }
     }
 }
