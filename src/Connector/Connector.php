@@ -72,6 +72,8 @@ class Connector
             } catch(AMQPConnectionException $e) {
                 $this->incrementConnectionAttempts();
                 $this->assertConnectionAttemptsLeft();
+
+                $this->sleeper->sleep();
             }
         } while( !$this->connected );
     }
