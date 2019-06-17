@@ -16,7 +16,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Ipunkt\\RabbitMQ\\": "tests/"
+      "Ipunkt\\RabbitMQTests\\": "tests/"
     }
   },
   "minimum-stability": "dev",
