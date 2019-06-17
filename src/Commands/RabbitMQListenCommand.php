@@ -4,16 +4,20 @@ namespace Ipunkt\RabbitMQ\Commands;
 
 use Interop\Amqp\AmqpConnectionFactory;
 use Illuminate\Console\Command;
+use Interop\Amqp\AmqpContext;
 use Interop\Amqp\AmqpMessage;
 use Interop\Amqp\AmqpQueue;
 use Interop\Amqp\AmqpTopic;
 use Interop\Amqp\Impl\AmqpBind;
 use Interop\Queue\Consumer;
+use Ipunkt\RabbitMQ\Connector\Connector;
+use Ipunkt\RabbitMQ\Connector\SecondSleeper;
 use Ipunkt\RabbitMQ\Events\MessageCausedException;
 use Ipunkt\RabbitMQ\Events\MessageProcessed;
 use Ipunkt\RabbitMQ\Events\MessageReceived;
 use Ipunkt\RabbitMQ\MessageHandler\MessageHandler;
 use Symfony\Component\Console\Output\Output;
+use Throwable;
 
 class RabbitMQListenCommand extends Command
 {
@@ -76,14 +80,20 @@ class RabbitMQListenCommand extends Command
     private $routingKeys = [];
 
     /**
+ * @var Connector
+ */private $connector;
+
+    /**
      * Create a new command instance.
      *
      * @param MessageHandler $messageHandler
+     * @param Connector $connector
      */
-    public function __construct(MessageHandler $messageHandler)
+    public function __construct(MessageHandler $messageHandler, Connector $connector)
     {
         parent::__construct();
         $this->messageHandler = $messageHandler;
+        $this->connector = $connector;
     }
 
     /**
@@ -95,8 +105,7 @@ class RabbitMQListenCommand extends Command
      */
     public function handle(AmqpConnectionFactory $connectionFactory)
     {
-        $this->context = $connectionFactory->createContext();
-        $this->context->setQos(0, 0, true);
+        $this->connectContext($connectionFactory);
 
         $this->buildTopic();
 
@@ -107,6 +116,17 @@ class RabbitMQListenCommand extends Command
         $this->buildConsumer();
 
         return $this->consume();
+    }
+
+    private function connectContext(AmqpConnectionFactory $connectionFactory)
+    {
+        $this->context = $connectionFactory->createContext();
+
+        $this->connector
+            ->setContext($this->context)
+            ->setConnectCallback(function(AmqpContext $context) {
+                $context->setQos(0, 0, true);
+            })->connect();
     }
 
     private function buildTopic(): void
@@ -156,7 +176,7 @@ class RabbitMQListenCommand extends Command
                     ->setContext($this->context)
                     ->setQueue($this->queue)
                     ->handle();
-            } catch(\Throwable $t) {
+            } catch(Throwable $t) {
                 $this->messageCausedExceptionEvent($message, $t);
                 throw $t;
             }
@@ -199,7 +219,7 @@ class RabbitMQListenCommand extends Command
     {
         try {
             event(new MessageReceived($message));
-        } catch(\Throwable $t) {
+        } catch(Throwable $t) {
             echo "FATAL: Exception during MessageReceived Handler".PHP_EOL;
             var_dump($t);
             throw $t;
@@ -211,19 +231,24 @@ class RabbitMQListenCommand extends Command
 
         try {
             event(new MessageProcessed($message, $handled));
-        } catch(\Throwable $t) {
+        } catch(Throwable $t) {
             echo "FATAL: Exception during MessageProcessed Handler".PHP_EOL;
             throw $t;
         }
     }
 
-    private function messageCausedExceptionEvent(AmqpMessage $message, \Throwable $messageThrowable)
+    private function messageCausedExceptionEvent(AmqpMessage $message, Throwable $messageThrowable)
     {
         try {
             event(new MessageCausedException($message, $messageThrowable));
-        } catch(\Throwable $t) {
+        } catch(Throwable $t) {
             echo "FATAL: Exception during MessageCausedException Handler".PHP_EOL;
             var_dump($t);
         }
+    }
+
+    public function sleepOnError($secondsToSleep)
+    {
+        $this->connector->setSleeper(new SecondSleeper($secondsToSleep));
     }
 }
