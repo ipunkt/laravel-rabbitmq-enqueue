@@ -251,4 +251,9 @@ class RabbitMQListenCommand extends Command
     {
         $this->connector->setSleeper(new SecondSleeper($secondsToSleep));
     }
+
+    public function setMaximumConnectionAttempts($connectionAttempts)
+    {
+        $this->connector->setMaximumAttempts($connectionAttempts);
+    }
 }

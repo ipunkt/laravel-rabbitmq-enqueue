@@ -52,6 +52,7 @@ class Connector
     public function connect()
     {
         $this->resetConnectionVariables();
+
         $this->loopUntilConnected();
 
     }
@@ -122,5 +123,10 @@ class Connector
     {
         $this->connectCallback = $connectCallback;
         return $this;
+    }
+
+    public function setMaximumAttempts($maxConnectionAttempts)
+    {
+        $this->maxConnectionAttempts = $maxConnectionAttempts;
     }
 }
