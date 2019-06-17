@@ -37,7 +37,7 @@ class Provider extends ServiceProvider
 
     private function registerDefaultSleeper()
     {
-        $this->app->register(Sleeper::class, function () {
+        $this->app->bind(Sleeper::class, function () {
             return new SecondSleeper(5);
         });
     }
