@@ -8,6 +8,8 @@ use Interop\Queue\Destination;
 use Interop\Queue\Message;
 use Ipunkt\RabbitMQ\Events\MessageSending;
 use Ipunkt\RabbitMQ\Events\MessageSent;
+use Ipunkt\RabbitMQ\Rpc\Rpc;
+use Ipunkt\RabbitMQ\Sender\Exceptions\NoRpcAttachedException;
 
 /**
  * Class RabbitMQ
@@ -52,12 +54,38 @@ class RabbitMQ
     protected $context;
 
     /**
+     * @var bool
+     */
+    private $isRpcCall;
+
+    /**
+     * @var Rpc
+     */
+    private $rpc;
+
+    /**
+     * @var Closure
+     */
+    private $rpcBuilder;
+
+    /**
      * RabbitMQ constructor.
      * @param AmqpConnectionFactory $connectionFactory
      */
     public function __construct(AmqpConnectionFactory $connectionFactory) {
         $this->connectionFactory = $connectionFactory;
 
+        $this->rpcBuilder = function() {
+            /**
+             * @var Rpc $rpc
+             */
+            $rpc = app(Rpc::class);
+
+            $rpc->setTimeout(10);
+            $rpc->setAnswerField('answer_to_queue');
+
+            return $rpc;
+        };
         $this->dontRenameQueues();
         $this->dontRenameExchanges();
     }
@@ -80,6 +108,49 @@ class RabbitMQ
         $this->send($exchange, $message);
     }
 
+    public function asRpc()
+    {
+        $rpcBuilder = $this->rpcBuilder;
+        $this->rpc = $rpcBuilder();
+        $this->rpc
+            ->setContext($this->context)
+            ->createAnswerQueue()
+            ->appendAnswerQueueToData();
+        $this->isRpcCall = true;
+        return $this;
+    }
+
+    /**
+     * Get the current Rpc to preserve it across future rpc calls
+     *
+     * @return Rpc
+     */
+    public function getRpc()
+    {
+        return $this->rpc;
+    }
+
+    public function closeRpc()
+    {
+        $this->rpc = null;
+        $this->isRpcCall = false;
+    }
+
+    public function waitForResponse()
+    {
+        $this->assertHasRpc();
+
+        $this->rpc->listen();
+
+        return $this;
+
+    }
+
+    public function getResponse()
+    {
+        return $this->rpc->getMessage();
+    }
+
     public function onQueue($queue)
     {
         $this->connect();
@@ -93,14 +164,17 @@ class RabbitMQ
         if( !$message instanceof AmqpMessage )
             $message = new AmqpMessage();
 
+        $this->appendRpcData();
         $message->setBody( json_encode($this->data) );
         $message->setContentType('application/json');
 
         $producer = $this->context->createProducer();
 
+
         event(new MessageSending($message));
         $producer->send($to, $message);
         event(new MessageSent($message));
+        $this->resetRpc();
     }
 
     private function connect() {
@@ -165,6 +239,29 @@ class RabbitMQ
         $this->renameExchange = function ($exchange) {
             return $exchange;
         };
+    }
+
+    private function resetRpc()
+    {
+        $this->isRpcCall;
+        // keep rpc to allow listening to it
+    }
+
+    private function assertHasRpc()
+    {
+        if($this->rpc === null) {
+            throw new NoRpcAttachedException();
+        }
+    }
+
+    private function appendRpcData()
+    {
+        if($this->rpc === null)
+            return;
+
+        $this->rpc->setData($this->data)
+            ->appendAnswerQueueToData();
+        $this->data = $this->rpc->getData();
     }
 
 }
