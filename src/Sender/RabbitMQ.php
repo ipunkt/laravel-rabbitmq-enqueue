@@ -243,7 +243,7 @@ class RabbitMQ
 
     private function resetRpc()
     {
-        $this->isRpcCall;
+        $this->isRpcCall = false;
         // keep rpc to allow listening to it
     }
 
