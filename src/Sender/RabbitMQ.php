@@ -110,9 +110,12 @@ class RabbitMQ
 
     public function asRpc()
     {
+        $this->connect();
+
         $rpcBuilder = $this->rpcBuilder;
         $this->rpc = $rpcBuilder();
         $this->rpc
+            ->setContext($this->context)
             ->createAnswerQueue()
             ->appendAnswerQueueToData();
         $this->isRpcCall = true;
@@ -181,8 +184,6 @@ class RabbitMQ
             return;
 
         $this->context = $this->connectionFactory->createContext();
-
-        $this->rpc->setContext($this->context);
     }
 
     private function buildExchange($exchange)
