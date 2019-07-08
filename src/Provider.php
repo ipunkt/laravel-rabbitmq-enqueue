@@ -55,7 +55,7 @@ class Provider extends ServiceProvider
     private function setRpcTimeout()
     {
         $this->app->resolving(Rpc::class,function (Rpc $rpc) {
-            $rpc->setTimeout(config('rabbitmq.rpc.timeout'));
+            $rpc->setTimeout(config('rabbitmq.rpc.timeout', 10000));
         });
     }
 
