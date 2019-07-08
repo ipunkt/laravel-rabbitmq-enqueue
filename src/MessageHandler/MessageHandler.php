@@ -1,6 +1,7 @@
 <?php namespace Ipunkt\RabbitMQ\MessageHandler;
 
 use Enqueue\AmqpTools\RabbitMqDlxDelayStrategy;
+use Illuminate\Support\Facades\Log;
 use Interop\Amqp\AmqpMessage;
 use Interop\Queue\Consumer;
 use Interop\Queue\Processor;
@@ -58,17 +59,21 @@ class MessageHandler
             $result = Processor::REJECT;
         } catch(Throwable $throwable) {
             $this->requeueMessage();
+            Log::debug('Message requeued');
             throw $throwable;
         }
         switch ($result) {
             case Processor::ACK:
                 $this->consumer->acknowledge($this->message);
+                Log::debug('Message acknowledged');
                 return true;
             case Processor::REJECT:
                 $this->consumer->reject($this->message);
+                Log::debug('Message rejected');
                 return true;
             case Processor::REQUEUE:
                 $this->requeueMessage();
+                Log::debug('Message requeued');
                 return true;
         }
 
