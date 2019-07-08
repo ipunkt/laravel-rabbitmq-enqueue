@@ -1,6 +1,7 @@
 <?php namespace Ipunkt\RabbitMQ\Sender;
 
 use Closure;
+use Illuminate\Support\Facades\Log;
 use Interop\Amqp\AmqpConnectionFactory;
 use Interop\Amqp\Impl\AmqpMessage;
 use Interop\Queue\Context;
@@ -68,24 +69,33 @@ class RabbitMQ
         return $this;
     }
 
-    public function onExchange($exchange, $routingKey)
+    public function onExchange($exchangeName, $routingKey)
     {
         $this->connect();
 
-        $exchange = $this->buildExchange($exchange);
+        $exchange = $this->buildExchange($exchangeName);
 
         $message = new AmqpMessage();
         $message->setRoutingKey($routingKey);
 
+        Log::debug('RabbitMQ message on exchange', [
+            'exchange' => $exchangeName,
+            'routing-key' => $routingKey,
+            'data' => $this->data
+        ]);
         $this->send($exchange, $message);
     }
 
-    public function onQueue($queue)
+    public function onQueue($queueName)
     {
         $this->connect();
 
-        $queue = $this->buildQueue($queue);
+        $queue = $this->buildQueue($queueName);
 
+        Log::debug('RabbitMQ message on queue', [
+            'queue' => $queueName,
+            'data' => $this->data
+        ]);
         $this->send($queue);
     }
 
