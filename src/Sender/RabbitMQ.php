@@ -82,7 +82,6 @@ class RabbitMQ
              */
             $rpc = app(Rpc::class);
 
-            $rpc->setTimeout(10);
             $rpc->setAnswerField('answer_to_queue');
 
             return $rpc;
