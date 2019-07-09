@@ -26,7 +26,7 @@ class RabbitMQListenCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'rabbitmq:listen';
+    protected $signature = 'rabbitmq:listen {--w|wait=0}';
 
     /**
      * The console command description.
@@ -105,6 +105,8 @@ class RabbitMQListenCommand extends Command
      */
     public function handle(AmqpConnectionFactory $connectionFactory)
     {
+        $this->initialWait();
+
         $this->connectContext($connectionFactory);
 
         $this->buildTopic();
@@ -255,5 +257,11 @@ class RabbitMQListenCommand extends Command
     public function setMaximumConnectionAttempts($connectionAttempts)
     {
         $this->connector->setMaximumAttempts($connectionAttempts);
+    }
+
+    private function initialWait()
+    {
+        $waitTime = $this->option('wait');
+        sleep($waitTime);
     }
 }
