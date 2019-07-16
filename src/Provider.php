@@ -17,7 +17,7 @@ class Provider extends ServiceProvider
     {
         $this->publishes([
             __DIR__.'/config/rabbitmq.php' => config_path('rabbitmq.php'),
-            __DIR__.'/Providers/RabbitMQProvider.php' => app_path('Providers/RabbitMQProviderRabbitMQ.php'),
+            __DIR__.'/Providers/RabbitMQProvider.php' => app_path('Providers/RabbitMQProvider.php'),
         ]);
     }
 
