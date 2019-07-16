@@ -1,5 +1,7 @@
 <?php namespace App\Provider;
 
+use Ipunkt\RabbitMQ\Providers\RabbitMQBaseProvider;
+
 /**
  * Class RabbitMQProviderRabbitMQ
  * @package Ipunkt\RabbitMQ\Providers
