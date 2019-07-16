@@ -1,4 +1,4 @@
-<?php namespace Ipunkt\RabbitMQ\Providers;
+<?php namespace App\Provider;
 
 /**
  * Class RabbitMQProviderRabbitMQ
