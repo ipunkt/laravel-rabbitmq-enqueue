@@ -16,6 +16,7 @@ use Ipunkt\RabbitMQ\Events\MessageCausedException;
 use Ipunkt\RabbitMQ\Events\MessageProcessed;
 use Ipunkt\RabbitMQ\Events\MessageReceived;
 use Ipunkt\RabbitMQ\MessageHandler\MessageHandler;
+use Ipunkt\RabbitMQ\TopicBinder\TopicBinder;
 use Symfony\Component\Console\Output\Output;
 use Throwable;
 
@@ -41,11 +42,6 @@ class RabbitMQListenCommand extends Command
     private $context;
 
     /**
-     * @var \Interop\Amqp\AmqpTopic|\Interop\Queue\Topic
-     */
-    private $topic;
-
-    /**
      * @var \Interop\Amqp\AmqpQueue|\Interop\Queue\Queue
      */
     private $queue;
@@ -54,6 +50,7 @@ class RabbitMQListenCommand extends Command
      * @var \Enqueue\AmqpExt\AmqpConsumer|Consumer
      */
     private $consumer;
+
     /**
      * @var \Interop\Queue\SubscriptionConsumer
      */
@@ -70,30 +67,26 @@ class RabbitMQListenCommand extends Command
     private $queueName = '';
 
     /**
-     * @var string
-     */
-    private $exchangeName = '';
-
-    /**
-     * @var string[]
-     */
-    private $routingKeys = [];
-
-    /**
  * @var Connector
  */private $connector;
+    /**
+     * @var TopicBinder
+     */
+    private $topicBinder;
 
     /**
      * Create a new command instance.
      *
      * @param MessageHandler $messageHandler
      * @param Connector $connector
+     * @param TopicBinder $topicBinder
      */
-    public function __construct(MessageHandler $messageHandler, Connector $connector)
+    public function __construct(MessageHandler $messageHandler, Connector $connector, TopicBinder $topicBinder)
     {
         parent::__construct();
         $this->messageHandler = $messageHandler;
         $this->connector = $connector;
+        $this->topicBinder = $topicBinder;
     }
 
     /**
@@ -109,7 +102,7 @@ class RabbitMQListenCommand extends Command
 
         $this->connectContext($connectionFactory);
 
-        $this->buildTopic();
+        $this->buildTopics();
 
         $this->buildQueue();
 
@@ -131,16 +124,14 @@ class RabbitMQListenCommand extends Command
             })->connect();
     }
 
-    private function buildTopic(): void
+    private function buildTopics(): void
     {
-        if( !$this->hasExchange() )
-            return;
-
-        $this->topic = $this->context->createTopic( $this->exchangeName );
-        $this->topic->setType(AmqpTopic::TYPE_TOPIC);
-        $this->topic->setFlags(AmqpTopic::FLAG_DURABLE);
-        $this->context->declareTopic($this->topic);
-        $this->info('Declared Exchange '.$this->exchangeName);
+        $this->topicBinder
+            ->setContext($this->context)
+            ->setBuiltCallback(function($exchangeName) {
+                $this->info('Declared Exchange '.$exchangeName);
+            })
+            ->build();
     }
 
     private function buildQueue(): void
@@ -153,13 +144,14 @@ class RabbitMQListenCommand extends Command
 
     private function bindQueue(): void
     {
-        if( !$this->hasExchange() )
-            return;
+        $this->topicBinder
+            ->setContext($this->context)
+            ->setQueue($this->queue)
+            ->setBoundCallback(function($queueName, $exchangeName, $routingKey) {
+                $this->info('Bound Queue '.$queueName.' to Exchange '.$exchangeName.' with '.$routingKey);
+            })
+            ->bind();
 
-        foreach ($this->routingKeys as $routingKey) {
-            $this->info('Bound Queue '.$this->queueName.' to Exchange '.$this->exchangeName.' with '.$routingKey);
-            $this->context->bind(new AmqpBind($this->topic, $this->queue, $routingKey));
-        }
     }
 
     private function buildConsumer()
@@ -196,25 +188,12 @@ class RabbitMQListenCommand extends Command
 
     public function registerHandler(string $routingKey, string $class)
     {
-        $this->routingKeys[] = $routingKey;
-        $this->routingKeys = array_unique($this->routingKeys);
         $this->messageHandler->registerHandler($routingKey, $class);
     }
 
     public function setQueue(string $queue)
     {
         $this->queueName = $queue;
-    }
-
-    public function setExchange(string $exchange)
-    {
-        $this->exchangeName = $exchange;
-    }
-
-    private function hasExchange()
-    {
-        $exchangeNameNotEmpty = !empty($this->exchangeName);
-        return $exchangeNameNotEmpty;
     }
 
     private function messageReceivedEvent(AmqpMessage $message)
@@ -263,5 +242,10 @@ class RabbitMQListenCommand extends Command
     {
         $waitTime = $this->option('wait');
         sleep($waitTime);
+    }
+
+    public function addBinding($exchangeName, $routingKey)
+    {
+        $this->topicBinder->addBinding($exchangeName, $routingKey);
     }
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\ServiceProvider;
 use Interop\Amqp\AmqpConnectionFactory;
+use Interop\Amqp\AmqpMessage;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
 use Ipunkt\RabbitMQ\Connector\SecondSleeper;
 use Ipunkt\RabbitMQ\Connector\Sleeper;
@@ -15,7 +16,8 @@ class Provider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/config/rabbitmq.php' => config_path('rabbitmq.php')
+            __DIR__.'/config/rabbitmq.php' => config_path('rabbitmq.php'),
+            __DIR__.'/Providers/RabbitMQProvider.php' => app_path('Providers/RabbitMQProviderRabbitMQ.php'),
         ]);
     }
 
