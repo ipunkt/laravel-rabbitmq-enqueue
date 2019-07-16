@@ -65,7 +65,7 @@ class TopicBinder
                 ->setContext($this->context)
                 ->setQueue($this->queue)
                 ->setBoundCallback($this->boundCallback)
-                ->build();
+                ->bind();
         }
     }
 
