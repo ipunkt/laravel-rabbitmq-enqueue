@@ -1,4 +1,4 @@
-<?php namespace App\Provider;
+<?php namespace App\Providers;
 
 use Ipunkt\RabbitMQ\Providers\RabbitMQBaseProvider;
 
