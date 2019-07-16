@@ -21,9 +21,13 @@ class RabbitMQProvider extends RabbitMQBaseProvider
      */
     protected $listenQueueConfig = 'rabbitmq.queue.name';
 
-    protected $bindings = [
-        // [ 'exchange', 'routing-key' ]
-    ];
+    protected function bindings()
+    {
+        return [
+            // [ 'exchange', 'routing-key' ]
+        ];
+    }
+
 
     protected $handlers = [
         // [ 'routing-key', Handler::class ]

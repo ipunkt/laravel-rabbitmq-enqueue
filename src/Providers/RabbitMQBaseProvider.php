@@ -21,9 +21,12 @@ class RabbitMQBaseProvider extends ServiceProvider
      */
     protected $listenQueueConfig = 'rabbitmq.queue.name';
 
-    protected $bindings = [];
-
     protected $handlers = [];
+
+    protected function bindings() {
+        return [
+        ];
+    }
 
     public function register()
     {
@@ -37,7 +40,7 @@ class RabbitMQBaseProvider extends ServiceProvider
     private function registerBindings()
     {
         $this->app->resolving(RabbitMQListenCommand::class, function (RabbitMQListenCommand $command) {
-            foreach ($this->bindings as $binding) {
+            foreach ($this->bindings() as $binding) {
                 list($exchange, $routingKey) = $binding;
 
                 $command->addBinding($exchange, $routingKey);
