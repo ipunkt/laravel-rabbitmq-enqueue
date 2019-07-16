@@ -15,6 +15,7 @@ use Ipunkt\RabbitMQ\Connector\SecondSleeper;
 use Ipunkt\RabbitMQ\Events\MessageCausedException;
 use Ipunkt\RabbitMQ\Events\MessageProcessed;
 use Ipunkt\RabbitMQ\Events\MessageReceived;
+use Ipunkt\RabbitMQ\LegacyExchange\LegacyExchange;
 use Ipunkt\RabbitMQ\MessageHandler\MessageHandler;
 use Ipunkt\RabbitMQ\TopicBinder\TopicBinder;
 use Symfony\Component\Console\Output\Output;
@@ -73,6 +74,10 @@ class RabbitMQListenCommand extends Command
      * @var TopicBinder
      */
     private $topicBinder;
+    /**
+     * @var LegacyExchange
+     */
+    private $legacyExchange;
 
     /**
      * Create a new command instance.
@@ -80,13 +85,15 @@ class RabbitMQListenCommand extends Command
      * @param MessageHandler $messageHandler
      * @param Connector $connector
      * @param TopicBinder $topicBinder
+     * @param LegacyExchange $legacyExchange
      */
-    public function __construct(MessageHandler $messageHandler, Connector $connector, TopicBinder $topicBinder)
+    public function __construct(MessageHandler $messageHandler, Connector $connector, TopicBinder $topicBinder, LegacyExchange $legacyExchange)
     {
         parent::__construct();
         $this->messageHandler = $messageHandler;
         $this->connector = $connector;
         $this->topicBinder = $topicBinder;
+        $this->legacyExchange = $legacyExchange;
     }
 
     /**
@@ -101,6 +108,10 @@ class RabbitMQListenCommand extends Command
         $this->initialWait();
 
         $this->connectContext($connectionFactory);
+
+        $this->legacyExchange
+            ->setTopicBinder($this->topicBinder)
+            ->mapLegacyExchangeToBinder();
 
         $this->buildTopics();
 
@@ -248,4 +259,10 @@ class RabbitMQListenCommand extends Command
     {
         $this->topicBinder->addBinding($exchangeName, $routingKey);
     }
+
+    public function setExchange($exchangeName)
+    {
+        $this->legacyExchange->setExchangeName($exchangeName);
+    }
+
 }
