@@ -260,7 +260,7 @@ class RabbitMQListenCommand extends Command
         $this->topicBinder->addBinding($exchangeName, $routingKey);
     }
 
-    public function setExchange($exchangeName)
+    public function setExchange(string $exchangeName)
     {
         $this->legacyExchange->setExchangeName($exchangeName);
     }
