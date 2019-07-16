@@ -59,10 +59,12 @@ class RabbitMQBaseProvider extends ServiceProvider
     private function registerQueue()
     {
         $this->app->resolving(RabbitMQListenCommand::class, function (RabbitMQListenCommand $command) {
-            if($this->listenQueue === null) {
-                $command->setQueue( config($this->listenQueueConfig) );
+            if( is_string($this->listenQueue) ) {
+                $command->setQueue( $this->listenQueue );
                 return;
             }
+
+            $command->setQueue( config($this->listenQueueConfig) );
         });
     }
 
