@@ -30,9 +30,28 @@ class RabbitMQProvider extends RabbitMQBaseProvider
         ];
     }
 
-
     protected $handlers = [
         // [ 'routing-key', Handler::class ]
     ];
+
+    /*
+     * $rabbitMQ->publish([])->onQueue('default')
+     * Will send to `actual-queue` with the example configuration bellow
+     */
+    protected function mapQueuesOnSend() {
+        return [
+            // 'default' => 'actual-queue'
+        ];
+    }
+
+    /*
+     * $rabbitMQ->publish([])->onExchange('default', 'routing.key')
+     * Will send to `actual-exchange` with the example configuration bellow
+     */
+    protected function mapExchangesOnSend() {
+        return [
+            // 'default' => 'actual-exchange'
+        ];
+    }
 
 }

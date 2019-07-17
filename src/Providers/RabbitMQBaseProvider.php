@@ -3,6 +3,7 @@
 use function foo\func;
 use Illuminate\Support\ServiceProvider;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
+use Ipunkt\RabbitMQ\Sender\RabbitMQ;
 
 /**
  * Class RabbitMQBaseProvider
@@ -28,6 +29,16 @@ class RabbitMQBaseProvider extends ServiceProvider
         ];
     }
 
+    protected function mapQueuesOnSend() {
+        return [
+        ];
+    }
+
+    protected function mapExchangesOnSend() {
+        return [
+        ];
+    }
+
     public function register()
     {
         $this->registerQueue();
@@ -35,6 +46,10 @@ class RabbitMQBaseProvider extends ServiceProvider
         $this->registerBindings();
 
         $this->registerHandlers();
+
+        $this->registerQueueRename();
+
+        $this->registerExchangeRename();
     }
 
     private function registerBindings()
@@ -68,6 +83,32 @@ class RabbitMQBaseProvider extends ServiceProvider
             }
 
             $command->setQueue( config($this->listenQueueConfig) );
+        });
+    }
+
+    private function registerQueueRename()
+    {
+        $this->app->resolving(RabbitMQ::class, function (RabbitMQ $sender) {
+            $sender->setQueueRename(function($queue) {
+                $queueNameMap = $this->mapQueuesOnSend();
+                if(array_key_exists($queue, $queueNameMap))
+                    return $queueNameMap[$queue];
+
+                return $queue;
+            });
+        });
+    }
+
+    private function registerExchangeRename()
+    {
+        $this->app->resolving(RabbitMQ::class, function (RabbitMQ $sender) {
+            $sender->setExchangeRename(function($exchange) {
+                $exchangeNameMap = $this->mapExchangesOnSend();
+                if(array_key_exists($exchange, $exchangeNameMap))
+                    return $exchangeNameMap[$exchange];
+
+                return $exchange;
+            });
         });
     }
 
