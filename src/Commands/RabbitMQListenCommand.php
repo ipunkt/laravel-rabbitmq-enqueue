@@ -66,8 +66,10 @@ class RabbitMQListenCommand extends Command
     private $queueName = '';
 
     /**
- * @var Connector
- */private $connector;
+     * @var Connector
+     */
+    private $connector;
+
     /**
      * @var TopicBinder
      */

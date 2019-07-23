@@ -2,8 +2,8 @@
 
 use Illuminate\Support\ServiceProvider;
 use Interop\Amqp\AmqpConnectionFactory;
-use Interop\Amqp\AmqpMessage;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
+use Ipunkt\RabbitMQ\Commands\RabbitMQSetupTestCommand;
 use Ipunkt\RabbitMQ\Connector\SecondSleeper;
 use Ipunkt\RabbitMQ\Connector\Sleeper;
 use Ipunkt\RabbitMQ\Rpc\Rpc;
@@ -30,7 +30,7 @@ class Provider extends ServiceProvider
 
         $this->setRpcTimeout();
 
-        $this->registerCommand();
+        $this->registerCommands();
     }
 
     private function registerAmqpConnection()
@@ -47,10 +47,11 @@ class Provider extends ServiceProvider
         });
     }
 
-    private function registerCommand()
+    private function registerCommands()
     {
         $this->commands([
-            RabbitMQListenCommand::class
+            RabbitMQListenCommand::class,
+            RabbitMQSetupTestCommand::class,
         ]);
     }
 

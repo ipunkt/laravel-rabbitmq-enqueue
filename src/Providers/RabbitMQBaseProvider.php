@@ -1,8 +1,8 @@
 <?php namespace Ipunkt\RabbitMQ\Providers;
 
-use function foo\func;
 use Illuminate\Support\ServiceProvider;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
+use Ipunkt\RabbitMQ\Commands\RabbitMQSetupTestCommand;
 use Ipunkt\RabbitMQ\Sender\RabbitMQ;
 
 /**
@@ -59,6 +59,21 @@ class RabbitMQBaseProvider extends ServiceProvider
                 list($exchange, $routingKey) = $binding;
 
                 $command->addBinding($exchange, $routingKey);
+            }
+        });
+
+        $this->app->resolving(RabbitMQSetupTestCommand::class, function (RabbitMQSetupTestCommand $command) {
+            $boundExchanges = [];
+
+            foreach ($this->bindings() as $binding) {
+                list($exchange) = $binding;
+
+                if(array_key_exists($exchange, $boundExchanges))
+                    continue;
+
+                $command->addExchange($exchange);
+
+                $boundExchanges[$exchange] = $exchange;
             }
         });
     }
