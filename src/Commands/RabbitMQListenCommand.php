@@ -7,8 +7,6 @@ use Illuminate\Console\Command;
 use Interop\Amqp\AmqpContext;
 use Interop\Amqp\AmqpMessage;
 use Interop\Amqp\AmqpQueue;
-use Interop\Amqp\AmqpTopic;
-use Interop\Amqp\Impl\AmqpBind;
 use Interop\Queue\Consumer;
 use Ipunkt\RabbitMQ\Connector\Connector;
 use Ipunkt\RabbitMQ\Connector\SecondSleeper;
