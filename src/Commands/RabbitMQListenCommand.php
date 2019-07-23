@@ -264,5 +264,4 @@ class RabbitMQListenCommand extends Command
     {
         $this->legacyExchange->setExchangeName($exchangeName);
     }
-
 }

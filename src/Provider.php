@@ -6,6 +6,7 @@ use Interop\Amqp\AmqpMessage;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
 use Ipunkt\RabbitMQ\Connector\SecondSleeper;
 use Ipunkt\RabbitMQ\Connector\Sleeper;
+use Ipunkt\RabbitMQ\Rpc\Rpc;
 
 /**
  * Class Provider
@@ -26,6 +27,8 @@ class Provider extends ServiceProvider
         $this->registerAmqpConnection();
 
         $this->registerDefaultSleeper();
+
+        $this->setRpcTimeout();
 
         $this->registerCommand();
     }
@@ -49,6 +52,13 @@ class Provider extends ServiceProvider
         $this->commands([
             RabbitMQListenCommand::class
         ]);
+    }
+
+    private function setRpcTimeout()
+    {
+        $this->app->resolving(Rpc::class,function (Rpc $rpc) {
+            $rpc->setTimeout(config('rabbitmq.rpc.timeout', 10000));
+        });
     }
 
 }
