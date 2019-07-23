@@ -50,6 +50,8 @@ class RabbitMQBaseProvider extends ServiceProvider
         $this->registerQueueRename();
 
         $this->registerExchangeRename();
+
+        $this->mapExchangeRenameToTestExchanges();
     }
 
     private function registerBindings()
@@ -124,6 +126,16 @@ class RabbitMQBaseProvider extends ServiceProvider
 
                 return $exchange;
             });
+        });
+    }
+
+    private function mapExchangeRenameToTestExchanges()
+    {
+        $this->app->resolving(RabbitMQSetupTestCommand::class, function (RabbitMQSetupTestCommand $command) {
+            $exchangeNameMap = $this->mapExchangesOnSend();
+            foreach ($exchangeNameMap as $exchangeName) {
+                $command->addExchange($exchangeName);
+            }
         });
     }
 
