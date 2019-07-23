@@ -113,9 +113,7 @@ class RabbitMQ
         $this->send($exchange, $message);
     }
 
-    public function asRpc()
-    public function onQueue($queueName)
-    {
+    public function asRpc() {
         $this->connect();
 
         $rpcBuilder = $this->rpcBuilder;
@@ -137,12 +135,7 @@ class RabbitMQ
     {
         return $this->rpc;
     }
-        $queue = $this->buildQueue($queueName);
 
-        Log::debug('RabbitMQ message on queue', [
-            'queue' => $queueName,
-            'data' => $this->data
-        ]);
     public function closeRpc()
     {
         $this->rpc = null;
