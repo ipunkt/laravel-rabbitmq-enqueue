@@ -1,6 +1,7 @@
 <?php namespace Ipunkt\RabbitMQ\MessageHandler;
 
 use Enqueue\AmqpTools\RabbitMqDlxDelayStrategy;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Interop\Amqp\AmqpMessage;
 use Interop\Queue\Consumer;
@@ -41,6 +42,13 @@ class MessageHandler
      * @var string[]
      */
     protected $handlersClasspathes = [];
+
+    /**
+     * Registering a handler for this routing key will cause it to be called when no other handler takes the message
+     *
+     * @var string
+     */
+    protected $defaultHandlerRoutingKey = '#';
 
     private $routingKey = '';
 
@@ -90,7 +98,10 @@ class MessageHandler
     }
 
     private function hasHandler() {
-        return array_key_exists($this->routingKey, $this->handlersClasspathes);
+        $hasSpecificHanlder = array_key_exists($this->routingKey, $this->handlersClasspathes);
+        $hasDefaultHandler = array_key_exists($this->defaultHandlerRoutingKey, $this->handlersClasspathes);
+
+        return $hasSpecificHanlder || $hasDefaultHandler;
     }
 
     private function process()
@@ -106,7 +117,9 @@ class MessageHandler
     }
 
     private function getHandlerClasspath() {
-        return $this->handlersClasspathes[$this->routingKey];
+        $defaultHandlerClasspath = Arr::get($this->handlersClasspathes, $this->defaultHandlerRoutingKey, null);
+
+        return Arr::get($this->handlersClasspathes, $this->routingKey, $defaultHandlerClasspath);
     }
 
     public function registerHandler(string $routingKey, string $class)
