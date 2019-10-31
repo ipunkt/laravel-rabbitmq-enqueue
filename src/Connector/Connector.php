@@ -3,8 +3,8 @@
 use AMQPConnectionException;
 use Closure;
 use Enqueue\AmqpExt\AmqpContext;
-use Illuminate\Queue\MaxAttemptsExceededException;
 use Interop\Queue\Context;
+use Ipunkt\RabbitMQ\Connector\Exceptions\MaximumAttemptsReachedException;
 
 /**
  * Class Connector
@@ -94,7 +94,7 @@ class Connector
     {
         $maxAttemptsReached = $this->maxConnectionAttempts <= $this->connectionAttempts;
         if( $maxAttemptsReached )
-            throw new MaxAttemptsExceededException();
+            throw new MaximumAttemptsReachedException("Failed to connect to rabbitmq within {$this->connectionAttempts} tries.");
     }
 
     /**
