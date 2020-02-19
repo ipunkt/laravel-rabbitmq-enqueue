@@ -83,7 +83,7 @@ class RabbitMQBaseProvider extends ServiceProvider
 
     private function registerHandlers()
     {
-        $this->app->resolving(TakesMessageHandler::class, function (RabbitMQListenCommand $command) {
+        $this->app->resolving(TakesMessageHandler::class, function (TakesMessageHandler $command) {
             foreach ($this->handlers as $binding) {
                 list($routingKey, $handler) = $binding;
 
