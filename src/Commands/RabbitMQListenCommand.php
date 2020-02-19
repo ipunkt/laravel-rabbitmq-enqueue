@@ -10,6 +10,7 @@ use Interop\Amqp\AmqpQueue;
 use Interop\Queue\Consumer;
 use Ipunkt\RabbitMQ\Connector\Connector;
 use Ipunkt\RabbitMQ\Connector\SecondSleeper;
+use Ipunkt\RabbitMQ\Contracts\TakesMessageHandler;
 use Ipunkt\RabbitMQ\Events\MessageCausedException;
 use Ipunkt\RabbitMQ\Events\MessageProcessed;
 use Ipunkt\RabbitMQ\Events\MessageReceived;
@@ -19,7 +20,7 @@ use Ipunkt\RabbitMQ\TopicBinder\TopicBinder;
 use Symfony\Component\Console\Output\Output;
 use Throwable;
 
-class RabbitMQListenCommand extends Command
+class RabbitMQListenCommand extends Command implements TakesMessageHandler
 {
     /**
      * The name and signature of the console command.

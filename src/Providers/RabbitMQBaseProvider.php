@@ -3,6 +3,7 @@
 use Illuminate\Support\ServiceProvider;
 use Ipunkt\RabbitMQ\Commands\RabbitMQListenCommand;
 use Ipunkt\RabbitMQ\Commands\RabbitMQSetupTestCommand;
+use Ipunkt\RabbitMQ\Contracts\TakesMessageHandler;
 use Ipunkt\RabbitMQ\Sender\RabbitMQ;
 
 /**
@@ -82,7 +83,7 @@ class RabbitMQBaseProvider extends ServiceProvider
 
     private function registerHandlers()
     {
-        $this->app->resolving(RabbitMQListenCommand::class, function (RabbitMQListenCommand $command) {
+        $this->app->resolving(TakesMessageHandler::class, function (RabbitMQListenCommand $command) {
             foreach ($this->handlers as $binding) {
                 list($routingKey, $handler) = $binding;
 
