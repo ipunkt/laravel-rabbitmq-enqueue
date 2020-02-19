@@ -11,8 +11,11 @@ trait TestsRabbitMQ
 {
     public function sendMessage(AmqpMessage $message)
     {
-        $messageHelper = $this->app->make(TestHelper::class);
-        $messageHelper->send($message);
+        /**
+         * @var TestHelper $testHelper
+         */
+        $testHelper = $this->app->make(TestHelper::class);
+        $testHelper->send($message);
     }
 
     /**
