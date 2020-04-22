@@ -1,6 +1,8 @@
 <?php namespace Ipunkt\RabbitMQ\Sender;
 
+use AMQPChannelException;
 use Closure;
+use Enqueue\AmqpExt\AmqpContext;
 use Interop\Amqp\AmqpConnectionFactory;
 use Interop\Amqp\Impl\AmqpMessage;
 use Interop\Queue\Context;
@@ -72,12 +74,19 @@ class RabbitMQ
     {
         $this->connect();
 
-        $exchange = $this->buildExchange($exchange);
 
         $message = new AmqpMessage();
         $message->setRoutingKey($routingKey);
 
-        $this->send($exchange, $message);
+	    try {
+		    $this->send($exchange, $message);
+	    } catch(AMQPChannelException $e) {
+		    $this->reconnect();
+
+		    $exchange = $this->buildExchange($exchange);
+
+		    $this->send($exchange, $message);
+	    }
     }
 
     public function onQueue($queue)
@@ -86,7 +95,15 @@ class RabbitMQ
 
         $queue = $this->buildQueue($queue);
 
-        $this->send($queue);
+	    try {
+		    $this->send($queue);
+	    } catch(AMQPChannelException $e) {
+		    $this->reconnect();
+
+		    $queue = $this->buildQueue($queue);
+
+		    $this->send($queue);
+	    }
     }
 
     private function send( Destination $to, Message $message = null ) {
@@ -99,11 +116,29 @@ class RabbitMQ
         $producer = $this->context->createProducer();
 
         event(new MessageSending($message));
-        $producer->send($to, $message);
+		$producer->send($to, $message);
         event(new MessageSent($message));
     }
 
-    private function connect() {
+	protected function reconnect() {
+    	$this->disconnect();
+    	$this->connect();
+	}
+
+
+	protected function disconnect() {
+    	if($this->context instanceof AmqpContext)
+    		$this->context->close();
+
+    	$this->context = null;
+    	$this->clearExchanges();
+	}
+
+	protected function clearExchanges() {
+		$this->topics = [];
+	}
+
+    protected function connect() {
         if( $this->context instanceof Context )
             return;
 
@@ -122,7 +157,7 @@ class RabbitMQ
         return $this->topics[$exchange];
     }
 
-    private function exchangeExists($exchangeName) {
+    protected function exchangeExists($exchangeName) {
         return array_key_exists($exchangeName, $this->topics);
     }
 
