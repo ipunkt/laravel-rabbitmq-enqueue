@@ -170,7 +170,7 @@ class RabbitMQ
         $this->send($queue);
     }
 
-    private function send( Destination $to, Message $message = null ) {
+    protected function send( Destination $to, Message $message = null ) {
         if( !$message instanceof AmqpMessage )
             $message = new AmqpMessage();
 
@@ -187,14 +187,14 @@ class RabbitMQ
         $this->resetRpc();
     }
 
-    private function connect() {
+    protected function connect() {
         if( $this->context instanceof Context )
             return;
 
         $this->context = $this->connectionFactory->createContext();
     }
 
-    private function buildExchange($exchange)
+    protected function buildExchange($exchange)
     {
         if( !$this->exchangeExists($exchange) ) {
             $exchangeRenamer = $this->renameExchange;
@@ -206,11 +206,11 @@ class RabbitMQ
         return $this->topics[$exchange];
     }
 
-    private function exchangeExists($exchangeName) {
+    protected function exchangeExists($exchangeName) {
         return array_key_exists($exchangeName, $this->topics);
     }
 
-    private function buildQueue($queueName)
+    protected function buildQueue($queueName)
     {
         if( !$this->queueExists($queueName)) {
             $queueRenamer = $this->renameQueue;
@@ -222,7 +222,7 @@ class RabbitMQ
         return $this->queues[$queueName];
     }
 
-    private function queueExists($queue)
+    protected function queueExists($queue)
     {
         return array_key_exists($queue, $this->queues);
     }
@@ -251,20 +251,20 @@ class RabbitMQ
         };
     }
 
-    private function resetRpc()
+    protected function resetRpc()
     {
         $this->isRpcCall = false;
         // keep rpc to allow listening to it
     }
 
-    private function assertHasRpc()
+    protected function assertHasRpc()
     {
         if($this->rpc === null) {
             throw new NoRpcAttachedException();
         }
     }
 
-    private function appendRpcData()
+    protected function appendRpcData()
     {
         if($this->rpc === null)
             return;
