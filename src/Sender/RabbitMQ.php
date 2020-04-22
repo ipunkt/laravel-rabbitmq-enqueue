@@ -1,12 +1,15 @@
 <?php namespace Ipunkt\RabbitMQ\Sender;
 
 use Closure;
+use Enqueue\AmqpExt\AmqpContext;
 use Illuminate\Support\Facades\Log;
 use Interop\Amqp\AmqpConnectionFactory;
 use Interop\Amqp\Impl\AmqpMessage;
 use Interop\Queue\Context;
 use Interop\Queue\Destination;
+use Interop\Queue\Exception\Exception;
 use Interop\Queue\Message;
+use Interop\Queue\Topic;
 use Ipunkt\RabbitMQ\Events\MessageSending;
 use Ipunkt\RabbitMQ\Events\MessageSent;
 use Ipunkt\RabbitMQ\Rpc\Rpc;
@@ -20,7 +23,7 @@ class RabbitMQ
 {
 
     /**
-     * @var array
+     * @var array|Topic[]
      */
     protected $topics = [];
 
@@ -110,7 +113,15 @@ class RabbitMQ
             'routing-key' => $routingKey,
             'data' => $this->data
         ]);
-        $this->send($exchange, $message);
+        try {
+	        $this->send($exchange, $message);
+        } catch(Exception $e) {
+        	$this->reconnect();
+
+	        $exchange = $this->buildExchange($exchangeName);
+
+	        $this->send($exchange, $message);
+        }
     }
 
     public function asRpc() {
@@ -167,7 +178,15 @@ class RabbitMQ
             'queue' => $queueName,
             'data' => $this->data
         ]);
-        $this->send($queue);
+        try {
+	        $this->send($queue);
+        } catch(Exception $e) {
+        	$this->reconnect();
+
+	        $queue = $this->buildQueue($queueName);
+
+	        $this->send($queue);
+        }
     }
 
     protected function send( Destination $to, Message $message = null ) {
@@ -187,11 +206,28 @@ class RabbitMQ
         $this->resetRpc();
     }
 
+	protected function reconnect() {
+		$this->disconnect();
+		$this->connect();
+    }
+
+	protected function disconnect() {
+    	if ( $this->context instanceof AmqpContext )
+    		$this->context->close();
+
+    	$this->context = null;
+    	$this->clearExchanges();
+    }
+
     protected function connect() {
         if( $this->context instanceof Context )
             return;
 
         $this->context = $this->connectionFactory->createContext();
+    }
+
+	protected function clearExchanges() {
+		$this->topics = [];
     }
 
     protected function buildExchange($exchange)
