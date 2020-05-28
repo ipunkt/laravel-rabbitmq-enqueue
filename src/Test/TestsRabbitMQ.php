@@ -10,6 +10,17 @@ use Mockery;
 
 trait TestsRabbitMQ
 {
+
+    /**
+     * @var string
+     */
+    protected $expectedRoutingKey = '';
+
+    /**
+     * @var string
+     */
+    protected $expectedExchangeName = '';
+
     public function sendMessage(AmqpMessage $message)
     {
         /**
@@ -42,12 +53,24 @@ trait TestsRabbitMQ
         $this->app->instance(RabbitMQ::class, $this->rabbitMQ);
     }
 
+    protected function expectEvent($routingKey)
+    {
+        $this->expectedRoutingKey = $routingKey;
+        return $this;
+    }
+
+    protected function onExchange($exchangeName)
+    {
+        $this->expectedExchangeName = $exchangeName;
+        return $this;
+    }
+
     /**
      * @param string $event
      * @param array $expectedData
      */
-    protected function expectMessage( $event, $expectedData ) {
-        $this->rabbitMQ->shouldReceive( 'onExchange' )->with( 'default-exchange', $event )->once()->andReturnSelf();
+    protected function withMessage( $expectedData ) {
+        $this->rabbitMQ->shouldReceive( 'onExchange' )->with( $this->expectedExchangeName, $this->expectedRoutingKey )->once()->andReturnSelf();
         $this->rabbitMQ->shouldReceive( 'publish' )->withArgs(  function ( $data ) use ( $expectedData ) {
             $anyMatch = false;
 
