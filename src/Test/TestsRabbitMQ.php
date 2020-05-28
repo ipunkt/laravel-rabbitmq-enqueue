@@ -5,7 +5,8 @@ namespace Ipunkt\RabbitMQ\Test;
 
 
 use Interop\Amqp\AmqpMessage;
-use Ipunkt\RabbitMQ\MessageHandler\MessageHandler;
+use Ipunkt\RabbitMQ\Sender\RabbitMQ;
+use Mockery;
 
 trait TestsRabbitMQ
 {
