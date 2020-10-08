@@ -72,26 +72,7 @@ trait TestsRabbitMQ
     protected function withMessage( $expectedData ) {
         $this->rabbitMQ->shouldReceive( 'onExchange' )->with( $this->expectedExchangeName, $this->expectedRoutingKey )->once()->andReturnSelf();
         $this->rabbitMQ->shouldReceive( 'publish' )->withArgs(  function ( $data ) use ( $expectedData ) {
-            $anyMatch = false;
-
-            foreach ( $expectedData as $expectedKey => $expectedValue ) {
-
-                if ( !array_key_exists( $expectedKey, $data ) )
-                    return false;
-
-                if( is_float($data[ $expectedKey ]))
-                    $data[ $expectedKey ] = round($data[ $expectedKey ], 9);
-
-                if( is_float($expectedValue))
-                    $expectedValue = round($expectedValue, 9);
-
-                if ( $data[ $expectedKey ] != $expectedValue )
-                    return false;
-
-                $anyMatch = true;
-            }
-
-            return $anyMatch;
+            return $this->compareArray($expectedData, $data);
         } )->once()->andReturnSelf();
     }
 
@@ -100,7 +81,48 @@ trait TestsRabbitMQ
      * @param array $expectedData
      */
     protected function withAnyMessage() {
-        $this->rabbitMQ->shouldReceive( 'onExchange' )->with( $this->expectedExchangeName, $this->expectedRoutingKey )->once()->andReturnSelf();
-        $this->rabbitMQ->shouldReceive( 'publish' );
+      $this->rabbitMQ->shouldReceive( 'onExchange' )
+                     ->with( 
+                       $this->expectedExchangeName,
+                       $this->expectedRoutingKey
+                     )
+                     ->once()
+                     ->andReturnSelf();
+      $this->rabbitMQ->shouldReceive( 'publish' );
+    }
+
+    private function compareArray($expectedData, $data)
+    {
+      $anyMatch = false;
+      foreach ( $expectedData as $expectedKey => $expectedValue ) {
+
+        if ( !array_key_exists( $expectedKey, $data ) )
+          return false;
+
+        if( $this->compare($expectedValue, $data[$expectedKey]) ) {
+          $anyMatch = true;
+        }
+      }
+      
+      return $anyMatch;
+    }
+
+    private function compare($expectedValue, $actualValue)
+    {
+      if( is_float($actualValue))
+        $actualValue = round($actualValue, 9);
+
+      if( is_float($expectedValue))
+        $expectedValue = round($expectedValue, 9);
+
+      if( is_array($expectedValue) && is_array($actualValue) ) {
+        return $this->compareArray($expectedValue, $actualValue);
+      }
+
+      if ( $actualValue != $expectedValue ) {
+        return false;
+      }
+
+      return true;
     }
 }
