@@ -94,4 +94,13 @@ trait TestsRabbitMQ
             return $anyMatch;
         } )->once()->andReturnSelf();
     }
+
+    /**
+     * @param string $event
+     * @param array $expectedData
+     */
+    protected function withAnyMessage() {
+        $this->rabbitMQ->shouldReceive( 'onExchange' )->with( $this->expectedExchangeName, $this->expectedRoutingKey )->once()->andReturnSelf();
+        $this->rabbitMQ->shouldReceive( 'publish' );
+    }
 }
